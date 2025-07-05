@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv() # This line reads the .env file
 
-import config
+from config import *
 import os
 import asyncio
 import logging
