@@ -77,6 +77,7 @@ ptb_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_messa
 @app.route(f"/{TELEGRAM_TOKEN}", methods=["POST"])
 async def webhook():
     """This endpoint receives updates from Telegram."""
+    await ptb_app.initialize() 
     update_data = request.get_json(force=True)
     update = Update.de_json(update_data, ptb_app.bot)
     await ptb_app.process_update(update)
@@ -87,7 +88,7 @@ async def set_webhook():
     """A one-time function to tell Telegram where to send updates."""
     if not WEBHOOK_URL:
         return "Error: WEBHOOK_URL environment variable not set."
-    
+    await ptb_app.initialize()
     # We include the token in the path to ensure that only Telegram can call it
     webhook_full_url = f"{WEBHOOK_URL}/{TELEGRAM_TOKEN}"
     await ptb_app.bot.set_webhook(url=webhook_full_url)
