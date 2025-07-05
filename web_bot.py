@@ -1,13 +1,14 @@
 from dotenv import load_dotenv
 load_dotenv() # This line reads the .env file
 
-
+import config
 import os
 import asyncio
 import logging
 from flask import Flask, request
 from telegram import Update
 from telegram.ext import Application, MessageHandler, filters
+
 
 # --- Library Setup ---
 import instaloader
@@ -32,28 +33,28 @@ YDL_OPTS = {'format': 'best', 'quiet': True, 'noplaylist': True}
 
 # --- Core Bot Logic (Video Handlers) ---
 async def handle_instagram(update, url):
-    await update.message.reply_text("Fetching public Instagram Reel...")
+    await update.message.reply_text(f"{wait_message}")
     try:
         shortcode = url.split("/reel/")[1].split("/")[0]
         post = instaloader.Post.from_shortcode(L.context, shortcode)
-        await update.message.reply_video(post.video_url, caption="Here is your video!")
+        await update.message.reply_video(post.video_url, caption=f"{success_message}")
     except Exception as e:
         logger.error(f"Failed to fetch Instagram Reel without login: {e}")
-        await update.message.reply_text("Sorry, I can only fetch public Reels, and this one failed. Private content and Stories require a login, which is not supported in this simple setup.")
+        await update.message.reply_text(f"{fail_message}")
 
 async def handle_youtube(update, url):
-    await update.message.reply_text("Fetching YouTube Short...")
+    await update.message.reply_text(f"{wait_message}")
     try:
         with yt_dlp.YoutubeDL(YDL_OPTS) as ydl:
             info_dict = ydl.extract_info(url, download=False)
             video_url = info_dict.get('url')
         if video_url:
-            await update.message.reply_video(video_url, caption="Here is your video!")
+            await update.message.reply_video(video_url, caption=f"{success_message}")
         else:
-            await update.message.reply_text("Could not extract video from this YouTube link.")
+            await update.message.reply_text(f"{fail_message_yt1}")
     except Exception as e:
         logger.error(f"Error handling YouTube URL: {e}")
-        await update.message.reply_text("An error occurred while fetching the YouTube video.")
+        await update.message.reply_text(f"{fail_message_yt1}")
 
 async def handle_message(update: Update, context):
     """The main message handler. Determines which function to call based on the URL."""
@@ -66,7 +67,7 @@ async def handle_message(update: Update, context):
     elif "youtube.com" in url or "youtu.be" in url:
         await handle_youtube(update, url)
     else:
-        await update.message.reply_text("Please send a valid public Instagram Reel or YouTube link.")
+        await update.message.reply_text("f{greeting_message}")
 
 
 # --- Vercel Serverless Setup ---
