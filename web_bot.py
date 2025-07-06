@@ -54,32 +54,29 @@ YDL_OPTS = {'format': 'best', 'quiet': True, 'noplaylist': True}
 
 # --- Core Bot Logic (Video Handlers) ---
 async def handle_instagram(update, url):
+    """Handles Instagram links with more detailed logging."""
     await update.message.reply_text("Fetching your Instagram link...")
     
     try:
-        # Extract the shortcode from any Instagram URL (reels, posts, etc.)
         shortcode = url.split('/')[-2]
-        post = instaloader.Post.from_shortcode(L.context, shortcode)
+        logger.info(f"Extracted shortcode: {shortcode}. Starting Instaloader...")
 
-        # IMPORTANT: Check if the post actually has a video
+        # This is the line that is likely timing out
+        post = instaloader.Post.from_shortcode(L.context, shortcode)
+        
+        logger.info(f"Post data for {shortcode} retrieved successfully.")
+
         if post.video_url:
+            logger.info(f"Video URL found for {shortcode}. Sending video...")
             await update.message.reply_video(post.video_url, caption="Here is your video!")
+            logger.info("Video sent successfully.")
         else:
             logger.warning(f"Post {shortcode} is not a video.")
             await update.message.reply_text("This link doesn't seem to be a video post.")
 
-    except instaloader.exceptions.LoginRequiredException:
-        logger.error("Session ID is invalid or expired. Login is required.")
-        await update.message.reply_text("Sorry, my connection to Instagram has expired. The admin needs to refresh it.")
-        
-    except instaloader.exceptions.RateException:
-        logger.error("Instagram rate limit has been hit.")
-        await update.message.reply_text("I'm being rate-limited by Instagram right now. Please try again in a little while.")
-
     except Exception as e:
-        # This logs the TRUE error for any other unexpected issue
-        logger.error(f"An unexpected error occurred fetching Instagram content: {e}")
-        await update.message.reply_text("Sorry, an unknown error occurred while trying to get that post.")
+        logger.error(f"An error occurred in handle_instagram for shortcode {shortcode}: {e}")
+        await update.message.reply_text("Sorry, an error occurred while trying to get that post.")
 
 async def handle_youtube(update, url):
     await update.message.reply_text(f"{wait_message}")
