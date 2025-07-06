@@ -54,14 +54,32 @@ YDL_OPTS = {'format': 'best', 'quiet': True, 'noplaylist': True}
 
 # --- Core Bot Logic (Video Handlers) ---
 async def handle_instagram(update, url):
-    await update.message.reply_text(f"{wait_message}")
+    await update.message.reply_text("Fetching your Instagram link...")
+    
     try:
-        shortcode = url.split("/reel/")[1].split("/")[0]
+        # Extract the shortcode from any Instagram URL (reels, posts, etc.)
+        shortcode = url.split('/')[-2]
         post = instaloader.Post.from_shortcode(L.context, shortcode)
-        await update.message.reply_video(post.video_url, caption=f"{success_message}")
+
+        # IMPORTANT: Check if the post actually has a video
+        if post.video_url:
+            await update.message.reply_video(post.video_url, caption="Here is your video!")
+        else:
+            logger.warning(f"Post {shortcode} is not a video.")
+            await update.message.reply_text("This link doesn't seem to be a video post.")
+
+    except instaloader.exceptions.LoginRequiredException:
+        logger.error("Session ID is invalid or expired. Login is required.")
+        await update.message.reply_text("Sorry, my connection to Instagram has expired. The admin needs to refresh it.")
+        
+    except instaloader.exceptions.RateException:
+        logger.error("Instagram rate limit has been hit.")
+        await update.message.reply_text("I'm being rate-limited by Instagram right now. Please try again in a little while.")
+
     except Exception as e:
-        logger.error(f"Failed to fetch Instagram Reel without login: {e}")
-        await update.message.reply_text(f"{fail_message}")
+        # This logs the TRUE error for any other unexpected issue
+        logger.error(f"An unexpected error occurred fetching Instagram content: {e}")
+        await update.message.reply_text("Sorry, an unknown error occurred while trying to get that post.")
 
 async def handle_youtube(update, url):
     await update.message.reply_text(f"{wait_message}")
