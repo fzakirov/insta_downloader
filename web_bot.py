@@ -19,6 +19,7 @@ import yt_dlp
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 WEBHOOK_URL = os.environ.get("WEBHOOK_URL") # This is your Vercel app's public URL
 INSTAGRAM_USERNAME = os.environ.get("INSTAGRAM_USERNAME") # For Instagram login
+INSTAGRAM_SESSION_ID = os.environ.get("INSTAGRAM_SESSION_ID")
 
 # --- Logging Setup ---
 logging.basicConfig(
@@ -29,6 +30,26 @@ logger = logging.getLogger(__name__)
 
 # --- Instaloader & yt-dlp Setup ---
 L = instaloader.Instaloader()
+
+# --- The Correct Serverless Login Method ---
+if INSTAGRAM_USERNAME and INSTAGRAM_SESSION_ID:
+    try:
+        # Create a session dictionary
+        session_data = {
+            'sessionid': INSTAGRAM_SESSION_ID,
+            'mid': '', 'ig_did': '', 'ig_nrcb': '', 'csrftoken': '',
+            'ds_user_id': '', 'shbid': '', 'shbts': '', 'rur': ''
+        }
+        # Load the session directly from the dictionary
+        L.context.load_session_from_dict(session_data)
+        L.context.username = INSTAGRAM_USERNAME
+        L.context.is_logged_in = True
+        logger.info(f"Successfully loaded Instagram session for {INSTAGRAM_USERNAME}")
+    except Exception as e:
+        logger.error(f"Could not load Instagram session from environment variables: {e}")
+else:
+    logger.warning("Instagram session environment variables not set. Proceeding without login.")
+
 YDL_OPTS = {'format': 'best', 'quiet': True, 'noplaylist': True}
 
 # --- Core Bot Logic (Video Handlers) ---
